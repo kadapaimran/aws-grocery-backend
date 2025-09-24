@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -34,6 +35,7 @@ public class SecurityConfig {
             .and()
             .authorizeHttpRequests()
             .antMatchers("/auth/**", "/api/products/**", "/api/payments/**").permitAll()
+            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // allow preflight requests
             .anyRequest().authenticated()
             .and()
             .sessionManagement()
@@ -60,24 +62,22 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ Fixed CORS configuration
     @Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
-    
-    // Allow both domain name and IP
-    configuration.setAllowedOriginPatterns(List.of(
-        "http://ec2-18-222-48-109.us-east-2.compute.amazonaws.com",
-        "http://18.222.48.109"
-    ));
-    
-    configuration.addAllowedMethod("*");
-    configuration.addAllowedHeader("*");
-    configuration.setAllowCredentials(true); // allow cookies and auth headers
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
-    return source;
-}
+        // Explicitly allow your EC2 domain and IP
+        configuration.setAllowedOriginPatterns(List.of(
+            "http://ec2-18-222-48-109.us-east-2.compute.amazonaws.com",
+            "http://18.222.48.109"
+        ));
 
+        configuration.addAllowedMethod("*");  // GET, POST, PUT, DELETE, OPTIONS
+        configuration.addAllowedHeader("*");  // allow all headers
+        configuration.setAllowCredentials(true); // allow cookies/auth headers
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
